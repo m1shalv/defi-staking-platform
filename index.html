@@ -1,0 +1,880 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GroupFarm | DeFi Staking</title>
+
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/ethers/6.13.5/ethers.umd.min.js"></script>
+
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background: #0c1220;
+            color: #ffffff;
+            min-height: 100vh;
+        }
+
+        header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 25px 7%;
+            border-bottom: 1px solid #263248;
+        }
+
+        .logo {
+            font-size: 25px;
+            font-weight: bold;
+            color: #75e0bd;
+        }
+
+        button {
+            border: none;
+            border-radius: 9px;
+            padding: 12px 20px;
+            font-size: 14px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: 0.2s;
+        }
+
+        button:hover {
+            opacity: 0.85;
+        }
+
+        button:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        .connect-btn {
+            background: #75e0bd;
+            color: #101827;
+        }
+
+        main {
+            max-width: 1150px;
+            margin: 45px auto;
+            padding: 0 20px;
+        }
+
+        .hero {
+            margin-bottom: 35px;
+        }
+
+        .hero h1 {
+            font-size: 36px;
+            margin-bottom: 12px;
+        }
+
+        .hero p {
+            color: #9eabc0;
+            line-height: 1.6;
+        }
+
+        .wallet-info {
+            background: #172237;
+            border: 1px solid #293951;
+            border-radius: 14px;
+            padding: 20px;
+            margin-bottom: 25px;
+            display: flex;
+            justify-content: space-between;
+            flex-wrap: wrap;
+            gap: 20px;
+        }
+
+        .wallet-info span {
+            color: #9eabc0;
+            font-size: 13px;
+        }
+
+        .wallet-info strong {
+            display: block;
+            margin-top: 8px;
+            font-size: 15px;
+        }
+
+        .section-title {
+            margin: 30px 0 20px;
+            font-size: 23px;
+        }
+
+        .pools {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 20px;
+        }
+
+        .pool-card {
+            background: #172237;
+            border: 1px solid #293951;
+            border-radius: 15px;
+            padding: 23px;
+        }
+
+        .pool-card h3 {
+            font-size: 21px;
+            margin-bottom: 7px;
+        }
+
+        .pair {
+            color: #75e0bd;
+            font-size: 14px;
+            margin-bottom: 22px;
+        }
+
+        .stat {
+            display: flex;
+            justify-content: space-between;
+            padding: 12px 0;
+            border-bottom: 1px solid #293951;
+            font-size: 14px;
+            gap: 10px;
+        }
+
+        .stat span {
+            color: #9eabc0;
+        }
+
+        .stat strong {
+            text-align: right;
+            overflow-wrap: anywhere;
+        }
+
+        .actions {
+            margin-top: 20px;
+        }
+
+        input {
+            width: 100%;
+            padding: 13px;
+            margin-bottom: 12px;
+            background: #0c1220;
+            border: 1px solid #35445d;
+            border-radius: 8px;
+            color: white;
+            font-size: 14px;
+        }
+
+        input:focus {
+            outline: 1px solid #75e0bd;
+        }
+
+        .action-buttons {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 7px;
+        }
+
+        .action-buttons button {
+            padding: 11px 5px;
+            font-size: 12px;
+        }
+
+        .stake-btn {
+            background: #75e0bd;
+            color: #101827;
+        }
+
+        .withdraw-btn {
+            background: #31435d;
+            color: white;
+        }
+
+        .claim-btn {
+            background: #e7bd69;
+            color: #101827;
+        }
+
+        .claim-all-container {
+            text-align: center;
+            margin-top: 30px;
+        }
+
+        .claim-all-container button {
+            padding: 15px 35px;
+            font-size: 15px;
+        }
+
+        .message {
+            margin-top: 25px;
+            padding: 15px;
+            background: #172237;
+            border: 1px solid #293951;
+            border-radius: 10px;
+            color: #9eabc0;
+            overflow-wrap: anywhere;
+            line-height: 1.5;
+        }
+
+        .footer {
+            text-align: center;
+            padding: 35px;
+            color: #718096;
+            font-size: 13px;
+        }
+
+        @media (max-width: 850px) {
+            .pools {
+                grid-template-columns: 1fr;
+            }
+
+            .hero h1 {
+                font-size: 29px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+<header>
+    <div class="logo">GroupFarm</div>
+    <button class="connect-btn" id="connectBtn">
+        Connect Wallet
+    </button>
+</header>
+
+<main>
+
+    <section class="hero">
+        <h1>DeFi Staking Platform</h1>
+        <p>
+            Stake your Uniswap V2 LP tokens and earn GROUP1 rewards.
+            Three independent liquidity pools are available.
+        </p>
+    </section>
+
+    <section class="wallet-info">
+        <div>
+            <span>Connected Wallet</span>
+            <strong id="walletAddress">Not connected</strong>
+        </div>
+
+        <div>
+            <span>GROUP1 Balance</span>
+            <strong id="groupBalance">0 GROUP1</strong>
+        </div>
+
+        <div>
+            <span>Network</span>
+            <strong id="networkName">Not connected</strong>
+        </div>
+    </section>
+
+    <section class="wallet-info">
+        <div>
+            <span>Campaign Status</span>
+            <strong id="campaignStatus">Not connected</strong>
+        </div>
+
+        <div>
+            <span>Start Time</span>
+            <strong id="campaignStart">-</strong>
+        </div>
+
+        <div>
+            <span>End Time</span>
+            <strong id="campaignEnd">-</strong>
+        </div>
+    </section>
+
+    <h2 class="section-title">Available Pools</h2>
+
+    <section class="pools">
+
+        <div class="pool-card">
+            <h3>Pool A</h3>
+            <div class="pair">TOKEN_A / GROUP1</div>
+
+            <div class="stat">
+                <span>LP Balance</span>
+                <strong id="lpBalance0">-</strong>
+            </div>
+
+            <div class="stat">
+                <span>Staked LP</span>
+                <strong id="staked0">-</strong>
+            </div>
+
+            <div class="stat">
+                <span>Pending Rewards</span>
+                <strong id="earned0">-</strong>
+            </div>
+
+            <div class="actions">
+                <input type="number" id="amount0"
+                       placeholder="LP amount" min="0" step="any">
+
+                <div class="action-buttons">
+                    <button class="stake-btn" onclick="stake(0)">Stake</button>
+                    <button class="withdraw-btn" onclick="withdraw(0)">Withdraw</button>
+                    <button class="claim-btn" onclick="claim(0)">Claim</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="pool-card">
+            <h3>Pool B</h3>
+            <div class="pair">TOKEN_B / GROUP1</div>
+
+            <div class="stat">
+                <span>LP Balance</span>
+                <strong id="lpBalance1">-</strong>
+            </div>
+
+            <div class="stat">
+                <span>Staked LP</span>
+                <strong id="staked1">-</strong>
+            </div>
+
+            <div class="stat">
+                <span>Pending Rewards</span>
+                <strong id="earned1">-</strong>
+            </div>
+
+            <div class="actions">
+                <input type="number" id="amount1"
+                       placeholder="LP amount" min="0" step="any">
+
+                <div class="action-buttons">
+                    <button class="stake-btn" onclick="stake(1)">Stake</button>
+                    <button class="withdraw-btn" onclick="withdraw(1)">Withdraw</button>
+                    <button class="claim-btn" onclick="claim(1)">Claim</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="pool-card">
+            <h3>Pool C</h3>
+            <div class="pair">MBT / GROUP1</div>
+
+            <div class="stat">
+                <span>LP Balance</span>
+                <strong id="lpBalance2">-</strong>
+            </div>
+
+            <div class="stat">
+                <span>Staked LP</span>
+                <strong id="staked2">-</strong>
+            </div>
+
+            <div class="stat">
+                <span>Pending Rewards</span>
+                <strong id="earned2">-</strong>
+            </div>
+
+            <div class="actions">
+                <input type="number" id="amount2"
+                       placeholder="LP amount" min="0" step="any">
+
+                <div class="action-buttons">
+                    <button class="stake-btn" onclick="stake(2)">Stake</button>
+                    <button class="withdraw-btn" onclick="withdraw(2)">Withdraw</button>
+                    <button class="claim-btn" onclick="claim(2)">Claim</button>
+                </div>
+            </div>
+        </div>
+
+    </section>
+
+    <div class="claim-all-container">
+        <button class="claim-btn" onclick="claimAll()">
+            Claim All Rewards
+        </button>
+    </div>
+
+    <div class="message" id="status">
+        Connect your wallet to start using GroupFarm.
+    </div>
+
+</main>
+
+<div class="footer">
+    GroupFarm | Ethereum Sepolia Testnet
+</div>
+
+<script>
+
+    // CONTRACT ADDRESSES
+
+    const GROUP1_ADDRESS =
+        "0x669a323504bb4d7e226f353537e40db40f8ee831";
+
+    const FARM_ADDRESS =
+        "0xB6b9895c1002a165DBd893548b2633D89c7AF00d";
+
+    const LP_ADDRESSES = [
+        "0xaaa2b80413778cdb51d731107e31d8cf3488ebf7",
+        "0x10059b7e9454724aD8219286E9B80758925050Ee",
+        "0x3edf2848a4990a13ce604d999abcb009cbb17e43"
+    ];
+
+
+    // ERC20 ABI
+
+    const ERC20_ABI = [
+        "function balanceOf(address) view returns (uint256)",
+        "function approve(address,uint256) returns (bool)",
+        "function allowance(address,address) view returns (uint256)"
+    ];
+
+
+    // GROUPFARM ABI - VERIFIED AGAINST PROVIDED ABI
+
+    const FARM_ABI = [
+        "function stake(uint256 poolId,uint256 amount)",
+        "function withdraw(uint256 poolId,uint256 amount)",
+        "function claim(uint256 poolId)",
+        "function claimAll()",
+        "function earned(uint256 poolId,address account) view returns (uint256)",
+        "function userStakes(uint256 poolId,address account) view returns (uint256)",
+        "function sessionStart() view returns (uint256)",
+        "function sessionEnd() view returns (uint256)",
+        "function sessionStarted() view returns (bool)",
+        "function rewardToken() view returns (address)",
+        "function lpTokens(uint256) view returns (address)",
+        "function SESSION_DURATION() view returns (uint256)",
+        "function REWARD_RATE() view returns (uint256)",
+        "function REWARD_PER_POOL() view returns (uint256)"
+    ];
+
+
+    // GLOBAL VARIABLES
+
+    let provider;
+    let signer;
+    let userAddress;
+    let farm;
+    let group1;
+    let lpContracts = [];
+    let refreshTimer = null;
+
+    const status = document.getElementById("status");
+    const connectButton = document.getElementById("connectBtn");
+
+
+    // STATUS MESSAGE
+
+    function showStatus(message) {
+        status.textContent = message;
+    }
+
+
+    // FORMAT TOKEN AMOUNT
+
+    function formatAmount(value) {
+        return Number(
+            ethers.formatUnits(value, 18)
+        ).toLocaleString("en-US", {
+            maximumFractionDigits: 6
+        });
+    }
+
+
+    // CONNECT WALLET
+
+    async function connectWallet() {
+        try {
+            if (!window.ethereum) {
+                throw new Error("MetaMask is not installed.");
+            }
+
+            showStatus("Connecting wallet...");
+
+            provider = new ethers.BrowserProvider(window.ethereum);
+
+            await provider.send("eth_requestAccounts", []);
+
+            signer = await provider.getSigner();
+
+            userAddress = await signer.getAddress();
+
+            const network = await provider.getNetwork();
+
+            if (network.chainId !== 11155111n) {
+                showStatus("Please switch MetaMask to Ethereum Sepolia.");
+                return;
+            }
+
+            farm = new ethers.Contract(
+                FARM_ADDRESS,
+                FARM_ABI,
+                signer
+            );
+
+            group1 = new ethers.Contract(
+                GROUP1_ADDRESS,
+                ERC20_ABI,
+                provider
+            );
+
+            lpContracts = LP_ADDRESSES.map(address =>
+                new ethers.Contract(address, ERC20_ABI, signer)
+            );
+
+            document.getElementById("walletAddress").textContent =
+                userAddress.slice(0, 6) + "..." +
+                userAddress.slice(-4);
+
+            document.getElementById("networkName").textContent =
+                "Ethereum Sepolia";
+
+            connectButton.textContent = "Connected";
+
+            showStatus("Wallet connected successfully.");
+
+            await refreshData();
+            await refreshCampaign();
+
+            if (refreshTimer) {
+                clearInterval(refreshTimer);
+            }
+
+            refreshTimer = setInterval(async () => {
+                if (farm) {
+                    await refreshData();
+                    await refreshCampaign();
+                }
+            }, 15000);
+
+        } catch (error) {
+            showStatus("Connection error: " + getErrorMessage(error));
+        }
+    }
+
+
+    // LOAD BALANCES AND POOL INFORMATION
+
+    async function refreshData() {
+        if (!userAddress || !farm) return;
+
+        try {
+            const groupBalance =
+                await group1.balanceOf(userAddress);
+
+            document.getElementById("groupBalance").textContent =
+                formatAmount(groupBalance) + " GROUP1";
+
+            for (let i = 0; i < 3; i++) {
+
+                const [lpBalance, staked, rewards] =
+                    await Promise.all([
+                        lpContracts[i].balanceOf(userAddress),
+                        farm.userStakes(i, userAddress),
+                        farm.earned(i, userAddress)
+                    ]);
+
+                document.getElementById("lpBalance" + i).textContent =
+                    formatAmount(lpBalance);
+
+                document.getElementById("staked" + i).textContent =
+                    formatAmount(staked);
+
+                document.getElementById("earned" + i).textContent =
+                    formatAmount(rewards) + " GROUP1";
+            }
+
+        } catch (error) {
+            showStatus("Data loading error: " + getErrorMessage(error));
+        }
+    }
+
+
+    // LOAD CAMPAIGN INFORMATION
+
+    async function refreshCampaign() {
+        if (!farm) return;
+
+        try {
+            const [
+                started,
+                start,
+                end,
+                block
+            ] = await Promise.all([
+                farm.sessionStarted(),
+                farm.sessionStart(),
+                farm.sessionEnd(),
+                provider.getBlock("latest")
+            ]);
+
+            const chainTime = Number(block.timestamp);
+
+            let campaignStatus = "Not started";
+
+            if (started && chainTime < Number(end)) {
+                campaignStatus = "Active";
+            } else if (started && chainTime >= Number(end)) {
+                campaignStatus = "Finished";
+            }
+
+            document.getElementById("campaignStatus").textContent =
+                campaignStatus;
+
+            document.getElementById("campaignStart").textContent =
+                started
+                    ? new Date(Number(start) * 1000).toLocaleString()
+                    : "-";
+
+            document.getElementById("campaignEnd").textContent =
+                started
+                    ? new Date(Number(end) * 1000).toLocaleString()
+                    : "-";
+
+        } catch (error) {
+            showStatus("Campaign loading error: " + getErrorMessage(error));
+        }
+    }
+
+
+    // STAKE LP TOKENS
+
+    async function stake(poolId) {
+        try {
+            if (!farm) {
+                throw new Error("Connect wallet first.");
+            }
+
+            const sessionEnd = await farm.sessionEnd();
+            const latestBlock = await provider.getBlock("latest");
+
+            if (BigInt(latestBlock.timestamp) >= sessionEnd) {
+                throw new Error("The staking campaign has ended.");
+            }
+
+            const input =
+                document.getElementById("amount" + poolId).value;
+
+            if (!input || !Number.isFinite(Number(input)) ||
+                Number(input) <= 0) {
+                throw new Error("Enter a valid LP amount.");
+            }
+
+            const amount = ethers.parseUnits(input, 18);
+
+            const balance =
+                await lpContracts[poolId].balanceOf(userAddress);
+
+            if (balance < amount) {
+                throw new Error("Insufficient LP token balance.");
+            }
+
+            const allowance =
+                await lpContracts[poolId].allowance(
+                    userAddress,
+                    FARM_ADDRESS
+                );
+
+            if (allowance < amount) {
+                showStatus("Approving LP tokens...");
+
+                const approval =
+                    await lpContracts[poolId].approve(
+                        FARM_ADDRESS,
+                        amount
+                    );
+
+                await approval.wait();
+            }
+
+            showStatus("Staking LP tokens...");
+
+            const tx = await farm.stake(poolId, amount);
+
+            showStatus("Waiting for transaction confirmation...");
+
+            await tx.wait();
+
+            showStatus("Stake successful!");
+
+            document.getElementById("amount" + poolId).value = "";
+
+            await refreshData();
+
+        } catch (error) {
+            showStatus("Stake error: " + getErrorMessage(error));
+        }
+    }
+
+
+    // WITHDRAW LP TOKENS
+
+    async function withdraw(poolId) {
+        try {
+            if (!farm) {
+                throw new Error("Connect wallet first.");
+            }
+
+            const input =
+                document.getElementById("amount" + poolId).value;
+
+            if (!input || !Number.isFinite(Number(input)) ||
+                Number(input) <= 0) {
+                throw new Error("Enter a valid LP amount.");
+            }
+
+            const amount = ethers.parseUnits(input, 18);
+
+            const staked =
+                await farm.userStakes(poolId, userAddress);
+
+            if (staked < amount) {
+                throw new Error("Insufficient staked LP balance.");
+            }
+
+            showStatus("Withdrawing LP tokens...");
+
+            const tx = await farm.withdraw(poolId, amount);
+
+            showStatus("Waiting for transaction confirmation...");
+
+            await tx.wait();
+
+            showStatus("Withdraw successful!");
+
+            document.getElementById("amount" + poolId).value = "";
+
+            await refreshData();
+
+        } catch (error) {
+            showStatus("Withdraw error: " + getErrorMessage(error));
+        }
+    }
+
+
+    // CLAIM REWARDS FROM ONE POOL
+
+    async function claim(poolId) {
+        try {
+            if (!farm) {
+                throw new Error("Connect wallet first.");
+            }
+
+            showStatus("Checking available rewards...");
+
+            const reward = await farm.earned(poolId, userAddress);
+
+            if (reward === 0n) {
+                showStatus("No rewards available in this pool.");
+                return;
+            }
+
+            showStatus("Claiming GROUP1 rewards...");
+
+            const tx = await farm.claim(poolId);
+
+            showStatus("Waiting for transaction confirmation...");
+
+            await tx.wait();
+
+            showStatus("Claim successful!");
+
+            await refreshData();
+
+        } catch (error) {
+            showStatus("Claim error: " + getErrorMessage(error));
+        }
+    }
+
+
+    // CLAIM REWARDS FROM ALL POOLS
+
+    async function claimAll() {
+        try {
+            if (!farm) {
+                throw new Error("Connect wallet first.");
+            }
+
+            showStatus("Checking available rewards...");
+
+            const account = await signer.getAddress();
+
+            let totalRewards = 0n;
+
+            for (let i = 0; i < 3; i++) {
+                const reward = await farm.earned(i, account);
+                totalRewards += reward;
+            }
+
+            if (totalRewards === 0n) {
+                showStatus("No rewards available to claim.");
+                return;
+            }
+
+            showStatus("Claiming all GROUP1 rewards...");
+
+            const tx = await farm.claimAll();
+
+            showStatus("Waiting for transaction confirmation...");
+
+            await tx.wait();
+
+            showStatus("All rewards claimed successfully!");
+
+            await refreshData();
+
+        } catch (error) {
+            showStatus("Claim All error: " + getErrorMessage(error));
+        }
+    }
+
+
+    // READABLE ERROR MESSAGES
+
+    function getErrorMessage(error) {
+        if (error.code === "ACTION_REJECTED") {
+            return "Transaction was rejected by the user.";
+        }
+
+        if (error.code === "INSUFFICIENT_FUNDS") {
+            return "Insufficient Sepolia ETH for gas.";
+        }
+
+        if (error.reason) {
+            return error.reason;
+        }
+
+        if (error.shortMessage) {
+            return error.shortMessage;
+        }
+
+        return error.message || "Unknown error.";
+    }
+
+
+    // CONNECT BUTTON
+
+    connectButton.addEventListener(
+        "click",
+        connectWallet
+    );
+
+
+    // HANDLE ACCOUNT CHANGES
+
+    if (window.ethereum) {
+
+        window.ethereum.on("accountsChanged", () => {
+            window.location.reload();
+        });
+
+        window.ethereum.on("chainChanged", () => {
+            window.location.reload();
+        });
+
+    }
+
+</script>
+
+</body>
+</html>
+
